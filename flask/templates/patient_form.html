@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{% if patient_id %}Modifier Patient{% else %}Nouveau Patient{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">{% if patient %}Modifier Patient{% else %}Nouveau Patient{% endif %}</h1>
+
+    <form method="post">
+        <div class="form-group">
+            <label for="lastname">Nom</label>
+            <input type="text" class="form-control" id="lastname" name="lastname" value="{{ patient.lastname if patient else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="firstname">Prénom</label>
+            <input type="text" class="form-control" id="firstname" name="firstname" value="{{ patient.firstname if patient else '' }}" required>
+        </div>
+        <div class="form-group">
+            <label for="birthdate">Date de Naissance</label>
+            <input type="date" class="form-control" id="birthdate" name="birthdate" value="{{ patient.birthdate if patient else '' }}">
+        </div>
+        <div class="form-group">
+            <label for="gender">Sexe</label>
+            <select class="form-control" id="gender" name="gender">
+                <option value="M" {% if patient and patient.gender == 'M' %}selected{% endif %}>Masculin</option>
+                <option value="F" {% if patient and patient.gender == 'F' %}selected{% endif %}>Féminin</option>
+                <option value="O" {% if patient and patient.gender == 'O' %}selected{% endif %}>Autre</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

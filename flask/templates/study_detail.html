@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Détail Étude{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Détail de l'Étude</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ study.study_description }}</h5>
+            <p class="card-text"><strong>Patient:</strong> {{ study.patient_lastname }}, {{ study.patient_firstname }}</p>
+            <p class="card-text"><strong>Date:</strong> {{ study.study_date }}</p>
+            <p class="card-text"><strong>Modalité:</strong> {{ study.modality }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
