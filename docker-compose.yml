@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  #########################################
+  # Service Base de Données (MariaDB)
+  #########################################
+  db:
+    image: mariadb:10.11 # Utilisation d'une version spécifique pour la reproductibilité
+    container_name: mariadb_db
+    restart: unless-stopped
+    environment:
+      # Utilisation des variables du fichier .env
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    volumes:
+      # Volume nommé pour la persistance des données MySQL/MariaDB
+      - mariadb_data:/var/lib/mysql
+    #ports:
+      # Port exposé uniquement sur l'hôte si nécessaire pour un debug local (ex: DBeaver)
+      # - "3306:3306"
+      # Par défaut, il reste interne au réseau Docker
+    networks:
+      - app_network
+    healthcheck:
+      # Test pour vérifier que le serveur MariaDB est prêt à accepter des connexions
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MARIADB_USER}", "-p${MARIADB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  #########################################
+  # Service Applicatif (Flask)
+  #########################################
+  flask_app:
+    build:
+      context: ./flask # Chemin vers le répertoire contenant le Dockerfile
+    container_name: flask_service
+    restart: unless-stopped
+    ports:
+      # Map le port de l'hôte (défini dans .env) au port 5000 du conteneur
+      - "${FLASK_PORT}:5000"
+    volumes:
+      # Montage du code source pour le développement (live reload)
+      - ./flask:/app
+    networks:
+      - app_network
+    environment:
+      # Variables d'environnement pour l'application Flask
+      FLASK_APP: app.py
+      FLASK_ENV: development # Active le rechargement à chaud
+      FLASK_RUN_HOST: 0.0.0.0 # Nécessaire pour être accessible depuis l'extérieur du conteneur
+      # Variables de connexion à la base de données
+      DB_HOST: db # Nom du service MariaDB
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+      DB_NAME: ${MARIADB_DATABASE}
+    depends_on:
+      db:
+        # Attend que le healthcheck du service 'db' soit 'healthy'
+        condition: service_healthy
+
+  #########################################
+  # Service d'Administration (phpMyAdmin)
+  #########################################
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: pma_service
+    restart: unless-stopped
+    ports:
+      # Map le port de l'hôte (défini dans .env) au port 80 du conteneur
+      - "${PMA_PORT}:80"
+    environment:
+      PMA_HOST: db # Nom du service MariaDB
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD} # Permet la connexion en root
+    networks:
+      - app_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+# Définition des ressources externes
+volumes:
+  mariadb_data: # Le volume nommé pour la persistance des données DB
+    driver: local
+
+networks:
+  app_network: # Réseau privé pour la communication inter-services
+    driver: bridge
