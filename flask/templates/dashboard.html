@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de Bord{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mt-5">Tableau de Bord</h1>
+
+    <!-- Barre de recherche -->
+    <form action="{{ url_for('frontend.dashboard') }}" method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" name="q" placeholder="Rechercher par nom, prénom, description de l'étude, etc." value="{{ request.args.get('q', '') }}">
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Tableau des études/patients -->
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Date de l'étude</th>
+                <th>Description</th>
+                <th>Modalité</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for study in studies %}
+            <tr>
+                <td><a href="{{ url_for('frontend.patient_detail', patient_id=study.patient_id) }}">{{ study.lastname }}, {{ study.firstname }}</a></td>
+                <td>{{ study.study_date }}</td>
+                <td>{{ study.study_description }}</td>
+                <td>{{ study.modality }}</td>
+                <td>
+                    <a href="{{ url_for('frontend.edit_study', study_id=study.id) }}" class="btn btn-sm btn-primary">Modifier</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">Aucune étude trouvée.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

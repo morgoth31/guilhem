@@ -17,6 +17,8 @@ services:
     volumes:
       # Volume nommé pour la persistance des données MySQL/MariaDB
       - mariadb_data:/var/lib/mysql
+      # Montage du script d'initialisation
+      - ./db:/docker-entrypoint-initdb.d
     #ports:
       # Port exposé uniquement sur l'hôte si nécessaire pour un debug local (ex: DBeaver)
       # - "3306:3306"
