@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">Gestion des Utilisateurs</h1>
+
+    <!-- Formulaire de création d'utilisateur -->
+    <div class="card my-4">
+        <div class="card-header">
+            <h4>Créer un nouvel utilisateur</h4>
+        </div>
+        <div class="card-body">
+            <form id="createUserForm">
+                <div class="form-row">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="username" placeholder="Nom d'utilisateur" required>
+                    </div>
+                    <div class="col-md-4">
+                        <input type="password" class="form-control" name="password" placeholder="Mot de passe" required>
+                    </div>
+                    <div class="col-md-3">
+                        <select name="role_id" class="form-control">
+                            {% for role in roles %}
+                                <option value="{{ role.id }}">{{ role.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary">Créer</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau des utilisateurs -->
+    <div class="card">
+        <div class="card-header">
+            <h4>Utilisateurs existants</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Nom d'utilisateur</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>
+                            <select class="form-control" onchange="updateUserRole({{ user.id }}, this.value)">
+                                {% for role in roles %}
+                                    <option value="{{ role.id }}" {% if role.name == user.role_name %}selected{% endif %}>{{ role.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-control" onchange="updateUserStatus({{ user.id }}, this.value)">
+                                <option value="1" {% if user.is_active %}selected{% endif %}>Actif</option>
+                                <option value="0" {% if not user.is_active %}selected{% endif %}>Inactif</option>
+                            </select>
+                        </td>
+                        <td>
+                            <!-- Actions futures (ex: supprimer) -->
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    fetch('/api/users', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Erreur lors de la création de l\'utilisateur.');
+        }
+    });
+});
+
+function updateUserRole(userId, roleId) {
+    fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role_id: roleId }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            alert('Erreur lors de la mise à jour du rôle.');
+        }
+    });
+}
+
+function updateUserStatus(userId, isActive) {
+    fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: isActive }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            alert('Erreur lors de la mise à jour du statut.');
+        }
+    });
+}
+</script>
+{% endblock %}

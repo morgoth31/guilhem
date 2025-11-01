@@ -17,16 +17,32 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('frontend.dashboard') }}">Tableau de Bord</a>
+                        </li>
+                        {% if current_user.role in ['admin', 'modification'] %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('frontend.new_patient') }}">Nouveau Patient</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('frontend.new_study') }}">Nouvelle Étude</a>
+                            </li>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('frontend.admin_users') }}">Admin</a>
+                            </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
                 <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('frontend.dashboard') }}">Tableau de Bord</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('frontend.new_patient') }}">Nouveau Patient</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('frontend.new_study') }}">Nouvelle Étude</a>
-                    </li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('frontend.logout') }}">Déconnexion</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

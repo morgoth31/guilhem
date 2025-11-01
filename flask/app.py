@@ -1,14 +1,26 @@
 import os
 from flask import Flask
+from flask_login import LoginManager
+from models import User
 
 def create_app():
     app = Flask(__name__)
 
-    # Configuration de la base de données
+    # Configuration
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
     app.config['DB_HOST'] = os.environ.get('DB_HOST')
     app.config['DB_USER'] = os.environ.get('DB_USER')
     app.config['DB_PASSWORD'] = os.environ.get('DB_PASSWORD')
     app.config['DB_NAME'] = os.environ.get('DB_NAME')
+
+    # Initialisation de Flask-Login
+    login_manager = LoginManager()
+    login_manager.init_app(app)
+    login_manager.login_view = 'frontend.login'
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.get(user_id)
 
     # Importation et enregistrement des Blueprints
     from routes.api import api_bp

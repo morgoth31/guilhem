@@ -1,11 +1,35 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required, current_user
+from models import User
 from db import get_db
 import pymysql
 
 frontend_bp = Blueprint('frontend', __name__)
 
+# Routes d'authentification
+@frontend_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('frontend.dashboard'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.get_by_username(username)
+        if user and user.check_password(password):
+            login_user(user)
+            return redirect(url_for('frontend.dashboard'))
+        else:
+            flash('Identifiants invalides')
+    return render_template('login.html')
+
+@frontend_bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('frontend.login'))
+
 @frontend_bp.route('/')
-@frontend_bp.route('/dashboard')
+@login_required
 def dashboard():
     """
     Affiche le tableau de bord principal avec les études et la fonctionnalité de recherche.
@@ -41,6 +65,7 @@ def dashboard():
     return render_template('dashboard.html', studies=studies, search_query=search_query)
 
 @frontend_bp.route('/patient/new', methods=['GET', 'POST'])
+@login_required
 def new_patient():
     """
     Gère la création d'un nouveau patient.
@@ -64,6 +89,7 @@ def new_patient():
     return render_template('patient_form.html')
 
 @frontend_bp.route('/patient/<int:patient_id>')
+@login_required
 def patient_detail(patient_id):
     """
     Affiche les détails d'un patient et ses études.
@@ -87,6 +113,7 @@ def patient_detail(patient_id):
     return render_template('patient_detail.html', patient=patient, studies=studies)
 
 @frontend_bp.route('/patient/edit/<int:patient_id>', methods=['GET', 'POST'])
+@login_required
 def edit_patient(patient_id):
     """
     Gère l'édition d'un patient.
@@ -126,6 +153,7 @@ def edit_patient(patient_id):
     return render_template('patient_form.html', patient=patient)
 
 @frontend_bp.route('/study/new', methods=['GET', 'POST'])
+@login_required
 def new_study():
     """
     Gère la création d'une nouvelle étude.
@@ -156,6 +184,7 @@ def new_study():
     return render_template('study_form.html', patients=patients)
 
 @frontend_bp.route('/study/edit/<int:study_id>', methods=['GET', 'POST'])
+@login_required
 def edit_study(study_id):
     """
     Gère l'édition d'une étude.
@@ -196,6 +225,7 @@ def edit_study(study_id):
     return render_template('study_form.html', study=study, patients=patients)
 
 @frontend_bp.route('/study/<int:study_id>')
+@login_required
 def study_detail(study_id):
     """
     Affiche les détails d'une étude.
@@ -218,3 +248,26 @@ def study_detail(study_id):
         return "Étude non trouvée", 404
 
     return render_template('study_detail.html', study=study)
+
+# --- Route pour l'administration des utilisateurs ---
+
+@frontend_bp.route('/admin/users')
+@login_required
+def admin_users():
+    """
+    Affiche la page de gestion des utilisateurs pour les admins.
+    """
+    if current_user.role != 'admin':
+        return "Accès interdit", 403
+
+    db = get_db()
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT u.id, u.username, r.name as role_name, u.is_active FROM users u JOIN roles r ON u.role_id = r.id ORDER BY u.username")
+            users = cursor.fetchall()
+            cursor.execute("SELECT * FROM roles")
+            roles = cursor.fetchall()
+    except pymysql.MySQLError as e:
+        return f"Erreur lors de la récupération des utilisateurs: {e}", 500
+
+    return render_template('admin_users.html', users=users, roles=roles)

@@ -25,3 +25,27 @@ INSERT INTO patients (lastname, firstname, birthdate, gender) VALUES
 INSERT INTO studies (patient_id, study_date, study_description, modality) VALUES
 (1, NOW(), 'Examen du genou', 'IRM'),
 (2, NOW(), 'Radio du thorax', 'RX');
+
+-- Création de la table 'roles'
+CREATE TABLE IF NOT EXISTS roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- Insertion des rôles
+INSERT INTO roles (name) VALUES ('admin'), ('modification'), ('lecture');
+
+-- Création de la table 'users'
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role_id INT,
+    is_active BOOLEAN DEFAULT TRUE,
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+
+-- Insertion de l'utilisateur admin par défaut
+-- Le mot de passe pour 'admin' est 'admin'
+INSERT INTO users (username, password_hash, role_id) VALUES
+('admin', 'scrypt:32768:8:1$Yl8dK8jI$1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', 1);
