@@ -8,7 +8,11 @@ class User(UserMixin):
         self.username = username
         self.password_hash = password_hash
         self.role_id = role_id
-        self.is_active = is_active
+        self._is_active = is_active
+
+    @property
+    def is_active(self):
+        return self._is_active
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
