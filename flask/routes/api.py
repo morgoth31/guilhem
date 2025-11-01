@@ -1,4 +1,7 @@
 from flask import Blueprint, jsonify, request
+from flask_login import login_required
+from decorators import role_required
+from werkzeug.security import generate_password_hash
 from db import get_db
 import pymysql
 
@@ -7,6 +10,7 @@ api_bp = Blueprint('api', __name__)
 # --- Routes API pour les Patients ---
 
 @api_bp.route('/patients', methods=['GET'])
+@login_required
 def get_patients():
     """
     Lister tous les patients avec pagination.
@@ -34,6 +38,8 @@ def get_patients():
         return jsonify(status="error", message=f"Erreur lors de la récupération des patients: {e}"), 500
 
 @api_bp.route('/patients', methods=['POST'])
+@login_required
+@role_required('modification')
 def create_patient():
     """
     Créer un patient.
@@ -54,6 +60,7 @@ def create_patient():
         return jsonify(status="error", message=f"Erreur lors de la création du patient: {e}"), 500
 
 @api_bp.route('/patients/<int:patient_id>', methods=['GET'])
+@login_required
 def get_patient(patient_id):
     """
     Voir un patient.
@@ -71,6 +78,8 @@ def get_patient(patient_id):
         return jsonify(status="error", message=f"Erreur lors de la récupération du patient: {e}"), 500
 
 @api_bp.route('/patients/<int:patient_id>', methods=['PUT'])
+@login_required
+@role_required('modification')
 def update_patient(patient_id):
     """
     Mettre à jour un patient.
@@ -110,6 +119,7 @@ def update_patient(patient_id):
 # --- Routes API pour les Studies ---
 
 @api_bp.route('/studies', methods=['GET'])
+@login_required
 def get_studies():
     """
     Lister toutes les études.
@@ -124,6 +134,8 @@ def get_studies():
         return jsonify(status="error", message=f"Erreur lors de la récupération des études: {e}"), 500
 
 @api_bp.route('/studies', methods=['POST'])
+@login_required
+@role_required('modification')
 def create_study():
     """
     Créer une étude.
@@ -149,6 +161,8 @@ def create_study():
         return jsonify(status="error", message=f"Erreur lors de la création de l'étude: {e}"), 500
 
 @api_bp.route('/studies/<int:study_id>', methods=['PUT'])
+@login_required
+@role_required('modification')
 def update_study(study_id):
     """
     Mettre à jour une étude.
@@ -184,9 +198,59 @@ def update_study(study_id):
         db.rollback()
         return jsonify(status="error", message=f"Erreur lors de la mise à jour de l'étude: {e}"), 500
 
+# --- Routes API pour les Utilisateurs (Admin) ---
+
+@api_bp.route('/users', methods=['GET'])
+@login_required
+@role_required('admin')
+def get_users():
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("SELECT u.id, u.username, r.name as role, u.is_active FROM users u JOIN roles r ON u.role_id = r.id")
+        users = cursor.fetchall()
+    return jsonify(users)
+
+@api_bp.route('/users', methods=['POST'])
+@login_required
+@role_required('admin')
+def create_user():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    role_id = data.get('role_id')
+
+    if not all([username, password, role_id]):
+        return jsonify(status="error", message="Données manquantes."), 400
+
+    password_hash = generate_password_hash(password)
+    db = get_db()
+    with db.cursor() as cursor:
+        cursor.execute("INSERT INTO users (username, password_hash, role_id) VALUES (%s, %s, %s)",
+                       (username, password_hash, role_id))
+    db.commit()
+    return jsonify(status="success", message="Utilisateur créé."), 201
+
+@api_bp.route('/users/<int:user_id>', methods=['PUT'])
+@login_required
+@role_required('admin')
+def update_user(user_id):
+    data = request.get_json()
+    role_id = data.get('role_id')
+    is_active = data.get('is_active')
+
+    db = get_db()
+    with db.cursor() as cursor:
+        if role_id is not None:
+            cursor.execute("UPDATE users SET role_id = %s WHERE id = %s", (role_id, user_id))
+        if is_active is not None:
+            cursor.execute("UPDATE users SET is_active = %s WHERE id = %s", (is_active, user_id))
+    db.commit()
+    return jsonify(status="success", message="Utilisateur mis à jour.")
+
 # --- Route de Recherche ---
 
 @api_bp.route('/search', methods=['GET'])
+@login_required
 def search():
     """
     Recherche multi-champs sur les patients et les études.

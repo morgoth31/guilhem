@@ -35,7 +35,9 @@
                 <td>{{ study.study_description }}</td>
                 <td>{{ study.modality }}</td>
                 <td>
-                    <a href="{{ url_for('frontend.edit_study', study_id=study.id) }}" class="btn btn-sm btn-primary">Modifier</a>
+                    {% if current_user.role in ['admin', 'modification'] %}
+                        <a href="{{ url_for('frontend.edit_study', study_id=study.id) }}" class="btn btn-sm btn-primary">Modifier</a>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}
