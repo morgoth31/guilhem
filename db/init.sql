@@ -48,4 +48,5 @@ CREATE TABLE IF NOT EXISTS users (
 -- Insertion de l'utilisateur admin par défaut
 -- Le mot de passe pour 'admin' est 'admin'
 INSERT INTO users (username, password_hash, role_id) VALUES
-('admin', 'scrypt:32768:8:1$Yl8dK8jI$1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d', 1);
+('admin', 'scrypt:32768:8:1$sSMsEIlm7HfdvgNm$1a21bd7c80d7d62f34986f1c408e0ff2c5e1cc040cb3b3da9fcca00e1b441c0124ec8fc9858774ea82f6714064caa4da0b33cca037b7642796e5caeb42b4c493', 1);
+           
